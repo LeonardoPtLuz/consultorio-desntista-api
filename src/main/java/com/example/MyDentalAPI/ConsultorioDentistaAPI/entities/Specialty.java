@@ -33,5 +33,8 @@ public class Specialty {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        if (this.active == null) {
+            this.active = true;
+        }
     }
 }

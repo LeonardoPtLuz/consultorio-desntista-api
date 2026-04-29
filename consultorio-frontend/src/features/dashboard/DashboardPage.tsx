@@ -14,8 +14,8 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         const [summaryRes, todayRes] = await Promise.all([
-          api.get('/dashboard/summary'),
-          api.get('/dashboard/appointments/today')
+          api.get('/api/dashboard/summary'),
+          api.get('/api/dashboard/appointments/today')
         ]);
 
         setSummary(summaryRes.data);

@@ -1,71 +1,65 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../lib/api';
-import { LoginResponse, User } from '../types';
 
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  isLoading: boolean;
+interface UserInfo {
+  name: string;
+  role: string;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+interface AuthContextType {
+  isAuthenticated: boolean;
+  user: UserInfo | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (token) {
+      setIsAuthenticated(true);
+      if (savedUser) setUser(JSON.parse(savedUser));
     }
-    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
+      const res = await api.post('/api/auth/login', { email, password });
 
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
+      const { accessToken, refreshToken, name, role } = res.data;
 
-      const userData: User = {
-        name: data.name,
-        role: data.role as 'ADMIN' | 'DENTISTA' | 'RECEPCIONISTA',
-        email
-      };
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      const userInfo = { name, role };
 
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-
-      // Redireciona para o dashboard após login bem-sucedido
-      window.location.href = '/dashboard';
-
-    } catch (error: any) {
-      console.error('Login error:', error.response?.data || error);
-      throw error; // Deixa o componente LoginPage tratar o erro
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      setUser(userInfo);
+      setIsAuthenticated(true);
+    } catch (err: any) {
+      console.error('Erro no login:', err.response?.data || err);
+      throw err; // para o componente de login capturar e mostrar mensagem
     }
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
     setUser(null);
-    window.location.href = '/login';
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

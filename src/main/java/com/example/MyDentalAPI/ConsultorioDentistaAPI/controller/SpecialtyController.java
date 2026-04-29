@@ -34,22 +34,46 @@ public class SpecialtyController {
                 .orElseThrow(() -> new ResourceNotFoundException("Especialidade não encontrada: " + id)));
     }
 
+    /**
+     * Cria uma nova especialidade (somente ADMIN)
+     */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Cria especialidade (ADMIN)")
     public ResponseEntity<Specialty> create(@RequestBody Specialty specialty) {
-        if (specialtyRepository.existsByNameIgnoreCase(specialty.getName()))
+        // Tratamento de segurança para o campo active
+        if (specialty.getActive() == null) {
+            specialty.setActive(true);
+        }
+
+        // Verifica duplicidade de nome (case insensitive)
+        if (specialtyRepository.existsByNameIgnoreCase(specialty.getName())) {
             throw new ConflictException("Especialidade já existe: " + specialty.getName());
-        return ResponseEntity.status(201).body(specialtyRepository.save(specialty));
+        }
+
+        Specialty saved = specialtyRepository.save(specialty);
+        return ResponseEntity.status(201).body(saved);
     }
 
+    /**
+     * Atualiza uma especialidade existente (somente ADMIN)
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Specialty> update(@PathVariable Long id, @RequestBody Specialty req) {
-        Specialty s = specialtyRepository.findById(id)
+        Specialty existing = specialtyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Especialidade não encontrada: " + id));
-        s.setName(req.getName());
-        s.setDescription(req.getDescription());
-        return ResponseEntity.ok(specialtyRepository.save(s));
+
+        // Atualiza apenas os campos enviados
+        existing.setName(req.getName());
+        existing.setDescription(req.getDescription());
+
+        // Só atualiza o status 'active' se ele for enviado no request
+        if (req.getActive() != null) {
+            existing.setActive(req.getActive());
+        }
+
+        Specialty updated = specialtyRepository.save(existing);
+        return ResponseEntity.ok(updated);
     }
 }
