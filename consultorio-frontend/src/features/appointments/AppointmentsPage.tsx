@@ -3,7 +3,6 @@ import api from '../../lib/api';
 import { Appointment, Patient, Dentist, Treatment, PageResponse, AppointmentStatus } from '../../types';
 import { Plus, X, Edit2, Trash2, ChevronLeft, ChevronRight, Calendar, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
   AGENDADO: 'Agendado',
@@ -24,8 +23,12 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
 };
 
 const emptyForm = {
-  patientId: '' as any, dentistId: '' as any, treatmentId: '' as any,
-  scheduledAt: '', durationMinutes: 30, notes: '',
+  patientId: '' as any,
+  dentistId: '' as any,
+  treatmentId: '' as any,
+  scheduledAt: '',
+  durationMinutes: 30,
+  notes: '',
 };
 
 export default function AppointmentsPage() {
@@ -48,13 +51,20 @@ export default function AppointmentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<PageResponse<Appointment>>('/api/appointments', { params: { page, size: 15 } });
+      const res = await api.get<PageResponse<Appointment>>('/api/appointments', {
+        params: { page, size: 15 }
+      });
       setAppointments(res.data.content);
       setTotal(res.data.totalElements);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch (err) {
+      console.error("Erro ao carregar agendamentos:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [page]);
 
   useEffect(() => { load(); }, [load]);
+
   useEffect(() => {
     api.get<Patient[]>('/api/patients').then(r => setPatients(r.data.content || r.data)).catch(() => {});
     api.get<Dentist[]>('/api/dentists').then(r => setDentists(r.data)).catch(() => {});
@@ -62,45 +72,102 @@ export default function AppointmentsPage() {
   }, []);
 
   const openCreate = () => {
-    setEditing(null); setForm(emptyForm); setError(''); setModalOpen(true);
+    setEditing(null);
+    setForm(emptyForm);
+    setError('');
+    setModalOpen(true);
   };
+
   const openEdit = (a: Appointment) => {
     setEditing(a);
     setForm({
-      patientId: a.patient.id, dentistId: a.dentist.id, treatmentId: a.treatment?.id || '',
-      scheduledAt: a.scheduledAt.slice(0, 16), durationMinutes: a.durationMinutes, notes: a.notes || '',
+      patientId: a.patient?.id || '',
+      dentistId: a.dentist?.id || '',
+      treatmentId: a.treatment?.id || '',
+      scheduledAt: a.scheduledAt ? a.scheduledAt.slice(0, 16) : '',
+      durationMinutes: a.durationMinutes || 30,
+      notes: a.notes || '',
     });
-    setError(''); setModalOpen(true);
+    setError('');
+    setModalOpen(true);
   };
 
-  const handleSave = async () => {
-    setSaving(true); setError('');
-    try {
-      const payload = {
-        patientId: Number(form.patientId), dentistId: Number(form.dentistId),
-        treatmentId: form.treatmentId ? Number(form.treatmentId) : undefined,
-        scheduledAt: form.scheduledAt + ':00', durationMinutes: Number(form.durationMinutes), notes: form.notes,
-      };
-      if (editing) await api.put(`/appointments/${editing.id}`, payload);
-      else await api.post('/appointments', payload);
-      setModalOpen(false); load();
-    } catch (e: any) {
-      setError(e.response?.data?.message || 'Erro ao salvar agendamento');
-    } finally { setSaving(false); }
-  };
+// ==================== HANDLE SAVE ====================
+const handleSave = async () => {
+  setSaving(true);
+  setError('');
+
+  try {
+    if (!form.patientId || !form.dentistId || !form.scheduledAt) {
+      throw new Error("Paciente, Dentista e Data/Hora são obrigatórios");
+    }
+
+    const payload = {
+      patientId: Number(form.patientId),
+      dentistId: Number(form.dentistId),
+      treatmentId: form.treatmentId ? Number(form.treatmentId) : null,
+      scheduledAt: form.scheduledAt,                    // ← Envia direto (sem + ":00")
+      durationMinutes: Number(form.durationMinutes) || 30,
+      notes: form.notes?.trim() || null,
+    };
+
+    console.log("🔵 Payload enviado ao backend:", payload);
+
+    if (editing) {
+      await api.put(`/api/appointments/${editing.id}`, payload);
+    } else {
+      await api.post('/api/appointments', payload);
+    }
+
+    setModalOpen(false);
+    load();
+    alert("✅ Agendamento salvo com sucesso!");
+  } catch (e: any) {
+    console.error("❌ Erro completo:", e);
+    const responseData = e.response?.data;
+
+    let errorMsg = "Erro ao salvar agendamento.";
+
+    if (responseData?.message) {
+      errorMsg = responseData.message;
+    } else if (responseData?.errors) {
+      // Tratamento para erros de validação do @Valid
+      errorMsg = Object.values(responseData.errors).flat().join("\n");
+    }
+
+    setError(errorMsg);
+    console.error("📋 Detalhes do erro:", responseData);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleCancel = async (id: number) => {
     if (!confirm('Cancelar este agendamento?')) return;
-    try { await api.patch(`/appointments/${id}/cancel`); load(); } catch { /* ignore */ }
+    try {
+      await api.patch(`/api/appointments/${id}/cancel`);
+      load();
+    } catch (e: any) {
+      setError(e.response?.data?.message || 'Erro ao cancelar agendamento');
+    }
   };
 
   const handleStatusChange = async () => {
     if (!statusModal) return;
-    try { await api.patch(`/appointments/${statusModal.id}/status`, null, { params: { status: newStatus } }); setStatusModal(null); load(); } catch { /* ignore */ }
+    try {
+      await api.patch(`/api/appointments/${statusModal.id}/status`, null, {
+        params: { status: newStatus }
+      });
+      setStatusModal(null);
+      load();
+    } catch (e: any) {
+      setError(e.response?.data?.message || 'Erro ao atualizar status');
+    }
   };
 
-  const f = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [key]: e.target.value }));
+  const f = (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm(prev => ({ ...prev, [key]: e.target.value }));
 
   const filtered = filterStatus ? appointments.filter(a => a.status === filterStatus) : appointments;
   const totalPages = Math.ceil(total / 15);
@@ -192,14 +259,19 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* ==================== MODAL DE CADASTRO / EDIÇÃO ==================== */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b border-zinc-800 sticky top-0 bg-zinc-900">
-              <h2 className="text-xl font-bold text-white">{editing ? 'Editar Agendamento' : 'Novo Agendamento'}</h2>
-              <button onClick={() => setModalOpen(false)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800"><X size={20} /></button>
+              <h2 className="text-xl font-bold text-white">
+                {editing ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </h2>
+              <button onClick={() => setModalOpen(false)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800">
+                <X size={20} />
+              </button>
             </div>
+
             <div className="p-6 space-y-4">
               <FI label="Paciente *">
                 <select value={form.patientId} onChange={f('patientId')} className={inp}>
@@ -207,32 +279,68 @@ export default function AppointmentsPage() {
                   {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </FI>
+
               <FI label="Dentista *">
                 <select value={form.dentistId} onChange={f('dentistId')} className={inp}>
                   <option value="">Selecionar dentista...</option>
                   {dentists.map(d => <option key={d.id} value={d.id}>Dr(a). {d.name}</option>)}
                 </select>
               </FI>
+
               <FI label="Tratamento">
                 <select value={form.treatmentId} onChange={f('treatmentId')} className={inp}>
                   <option value="">Sem tratamento específico</option>
                   {treatments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </FI>
+
               <FI label="Data e Hora *">
-                <input type="datetime-local" value={form.scheduledAt} onChange={f('scheduledAt')} className={inp} />
-              </FI>
-              <FI label="Duração (minutos)">
-                <input type="number" value={form.durationMinutes} onChange={f('durationMinutes')} min={15} step={15} className={inp} />
-              </FI>
-              <FI label="Observações">
-                <textarea value={form.notes} onChange={f('notes')} rows={3} className={`${inp} resize-none`} />
+                <input
+                  type="datetime-local"
+                  value={form.scheduledAt}
+                  onChange={f('scheduledAt')}
+                  className={inp}
+                />
               </FI>
 
-              {error && <div className="text-red-400 text-sm bg-red-950/40 border border-red-800 rounded-xl px-4 py-3">{error}</div>}
+              <FI label="Duração (minutos)">
+                <input
+                  type="number"
+                  value={form.durationMinutes}
+                  onChange={f('durationMinutes')}
+                  min={15}
+                  step={15}
+                  className={inp}
+                />
+              </FI>
+
+              <FI label="Observações">
+                <textarea
+                  value={form.notes}
+                  onChange={f('notes')}
+                  rows={3}
+                  className={`${inp} resize-none`}
+                />
+              </FI>
+
+              {error && (
+                <div className="text-red-400 text-sm bg-red-950/40 border border-red-800 rounded-xl px-4 py-3">
+                  {error}
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setModalOpen(false)} className="px-5 py-2.5 text-zinc-400 border border-zinc-700 rounded-xl hover:text-white transition-colors">Cancelar</button>
-                <button onClick={handleSave} disabled={saving} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white font-semibold rounded-xl transition-colors">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="px-5 py-2.5 text-zinc-400 border border-zinc-700 rounded-xl hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white font-semibold rounded-xl transition-colors"
+                >
                   {saving ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
@@ -247,13 +355,20 @@ export default function AppointmentsPage() {
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-sm">
             <div className="flex justify-between items-center p-6 border-b border-zinc-800">
               <h2 className="text-xl font-bold text-white">Atualizar Status</h2>
-              <button onClick={() => setStatusModal(null)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800"><X size={20} /></button>
+              <button onClick={() => setStatusModal(null)} className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800">
+                <X size={20} />
+              </button>
             </div>
             <div className="p-6 space-y-3">
-              <p className="text-zinc-400 text-sm mb-4">Consulta de <strong className="text-white">{statusModal.patient?.name}</strong></p>
+              <p className="text-zinc-400 text-sm mb-4">
+                Consulta de <strong className="text-white">{statusModal.patient?.name}</strong>
+              </p>
               {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                <button key={k} onClick={() => setNewStatus(k as AppointmentStatus)}
-                  className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${newStatus === k ? 'border-emerald-600 bg-emerald-900/20 text-emerald-400' : 'border-zinc-700 text-zinc-400 hover:border-zinc-600'}`}>
+                <button
+                  key={k}
+                  onClick={() => setNewStatus(k as AppointmentStatus)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${newStatus === k ? 'border-emerald-600 bg-emerald-900/20 text-emerald-400' : 'border-zinc-700 text-zinc-400 hover:border-zinc-600'}`}
+                >
                   {v}
                 </button>
               ))}
@@ -269,7 +384,9 @@ export default function AppointmentsPage() {
   );
 }
 
+/* Componentes auxiliares */
 const inp = "w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-600 transition-colors";
+
 function FI({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="text-zinc-400 text-sm block mb-2">{label}</label>{children}</div>;
 }
