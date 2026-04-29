@@ -54,15 +54,48 @@ export default function DentistsPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true); setError('');
+    setSaving(true);
+    setError('');
+
     try {
-      const payload = { ...form, specialtyId: Number(form.specialtyId), userId: form.userId ? Number(form.userId) : undefined };
-      if (editing) await api.put(`/dentists/${editing.id}`, payload);
-      else await api.post('/dentists', payload);
-      setModalOpen(false); load();
+      const payload = {
+        ...form,
+        specialtyId: form.specialtyId ? Number(form.specialtyId) : null,
+        userId: form.userId ? Number(form.userId) : null
+      };
+
+      console.log('Payload enviado:', payload);   // ← importante
+
+      if (editing) {
+        await api.put(`/api/dentists/${editing.id}`, payload);
+      } else {
+        await api.post('/api/dentists', payload);
+      }
+
+      setModalOpen(false);
+      load();
     } catch (e: any) {
-      setError(e.response?.data?.message || 'Erro ao salvar dentista');
-    } finally { setSaving(false); }
+      console.error('Erro completo:', e.response);   // ← isso vai te ajudar muito
+
+      const data = e.response?.data;
+      let msg = 'Erro ao salvar dentista';
+
+      if (data?.message) {
+        msg = data.message;
+      } else if (data?.errors) {                    // validação do Spring
+        msg = Object.values(data.errors).flat().join(', ');
+      } else if (typeof data === 'string') {
+        msg = data;
+      } else if (e.response?.status === 400) {
+        msg = 'Dados inválidos. Verifique os campos obrigatórios e o email.';
+      } else if (e.response?.status === 409) {
+        msg = 'Já existe um dentista com este CRO ou email.';
+      }
+
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
