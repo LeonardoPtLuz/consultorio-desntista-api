@@ -43,12 +43,14 @@ public class MedicalRecordService {
             r.setAppointment(appointmentRepository.findById(req.appointmentId()).orElse(null));
         if (req.treatmentId() != null)
             r.setTreatment(treatmentRepository.findById(req.treatmentId()).orElse(null));
+
         r.setDescription(req.description());
         r.setDiagnosis(req.diagnosis());
         r.setPrescription(req.prescription());
         r.setNextSteps(req.nextSteps());
         r.setToothNumber(req.toothNumber());
         r.setPriceCharged(req.priceCharged());
+
         return medicalRecordRepository.save(r);
     }
 
@@ -62,5 +64,11 @@ public class MedicalRecordService {
         r.setToothNumber(req.toothNumber());
         r.setPriceCharged(req.priceCharged());
         return medicalRecordRepository.save(r);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        MedicalRecord record = findById(id);
+        medicalRecordRepository.delete(record);
     }
 }

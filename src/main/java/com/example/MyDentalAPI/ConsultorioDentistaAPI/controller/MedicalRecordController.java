@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,46 +19,63 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/medical-records")
 @RequiredArgsConstructor
-@Tag(name = "Prontuários")
+@Tag(name = "Prontuários", description = "Gestão de prontuários odontológicos")
 @SecurityRequirement(name = "bearerAuth")
 public class MedicalRecordController {
 
     private final MedicalRecordService medicalRecordService;
 
     @GetMapping("/patient/{patientId}")
-    @Operation(summary = "Histórico clínico completo do paciente")
+    @Operation(summary = "Listar prontuários de um paciente", description = "Retorna o histórico clínico completo de um paciente com paginação")
     public ResponseEntity<Page<MedicalRecord>> findByPatient(
             @PathVariable Long patientId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(medicalRecordService.findByPatient(patientId, PageRequest.of(page, size)));
+            @RequestParam(defaultValue = "15") int size) {   // Alterado para 15 para consistência com o frontend
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(medicalRecordService.findByPatient(patientId, pageable));
     }
 
     @GetMapping("/dentist/{dentistId}")
-    @Operation(summary = "Prontuários registrados por um dentista")
+    @Operation(summary = "Listar prontuários registrados por um dentista")
     public ResponseEntity<Page<MedicalRecord>> findByDentist(
             @PathVariable Long dentistId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(medicalRecordService.findByDentist(dentistId, PageRequest.of(page, size)));
+            @RequestParam(defaultValue = "15") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(medicalRecordService.findByDentist(dentistId, pageable));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Busca prontuário por ID")
+    @Operation(summary = "Buscar prontuário por ID")
     public ResponseEntity<MedicalRecord> findById(@PathVariable Long id) {
         return ResponseEntity.ok(medicalRecordService.findById(id));
     }
 
     @PostMapping
-    @Operation(summary = "Registra novo prontuário / evolução clínica")
+    @Operation(summary = "Criar novo prontuário")
     public ResponseEntity<MedicalRecord> create(@Valid @RequestBody MedicalRecordRequest request) {
         MedicalRecord created = medicalRecordService.create(request);
-        return ResponseEntity.created(URI.create("/api/medical-records/" + created.getId())).body(created);
+        return ResponseEntity
+                .created(URI.create("/api/medical-records/" + created.getId()))
+                .body(created);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualiza prontuário")
-    public ResponseEntity<MedicalRecord> update(@PathVariable Long id, @Valid @RequestBody MedicalRecordRequest request) {
-        return ResponseEntity.ok(medicalRecordService.update(id, request));
+    @Operation(summary = "Atualizar prontuário existente")
+    public ResponseEntity<MedicalRecord> update(
+            @PathVariable Long id,
+            @Valid @RequestBody MedicalRecordRequest request) {
+
+        MedicalRecord updated = medicalRecordService.update(id, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Excluir prontuário", description = "Exclui um prontuário permanentemente")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        medicalRecordService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
