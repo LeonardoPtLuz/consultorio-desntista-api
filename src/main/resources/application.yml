@@ -1,77 +1,44 @@
-# ==========================================
-# Dental Clinic API - Application Properties
-# ==========================================
-
 spring:
   application:
     name: dentista-api
 
-  # ---- PostgreSQL ----
   datasource:
-    url: jdbc:postgresql://localhost:5433/consultorio_dentista_db
-    username: postgres
-    password: 74518902
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
       connection-timeout: 30000
 
-  # ---- JPA / Hibernate ----
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: false
+
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         default_schema: public
 
-  # ---- Flyway (migrations) ----
   flyway:
     enabled: false
 
-# ---- JWT Security ----
 security:
   jwt:
-    secret: ${JWT_SECRET:d3nt4l-cl1n1c-s3cr3t-k3y-2024-v3ry-l0ng-s3cur3-k3y-f0r-jwt}
-    expiration: 86400000        # 24h em ms
-    refresh-expiration: 604800000  # 7 dias em ms
+    secret: ${JWT_SECRET}
+    expiration: 86400000
+    refresh-expiration: 604800000
 
-# ---- Server ----
 server:
-  port: 8080
-  error:
-    include-message: always
-    include-binding-errors: always
+  port: ${PORT:8080}
 
-# ---- Swagger / OpenAPI ----
 springdoc:
   api-docs:
     path: /v3/api-docs
+
   swagger-ui:
     path: /swagger-ui.html
-    operationsSorter: method
-    tagsSorter: alpha
-  info:
-    title: Dental Clinic API
-    version: 1.0.0
-    description: API completa para gerenciamento de consultório odontológico
-
-# ---- Actuator ----
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: when_authorized
-
-# ---- Logging ----
-logging:
-  level:
-    com.dental.api: DEBUG
-    org.springframework.security: INFO
-    org.hibernate.SQL: DEBUG
