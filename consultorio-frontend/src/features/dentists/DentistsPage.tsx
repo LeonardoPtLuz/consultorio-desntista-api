@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../lib/api';
 import { Dentist, Specialty, PageResponse } from '../../types';
-import { Plus, Search, Edit2, Trash2, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye, X } from 'lucide-react';
 
 const emptyForm = {
   name: '', cro: '', croState: '', specialtyId: '' as any,

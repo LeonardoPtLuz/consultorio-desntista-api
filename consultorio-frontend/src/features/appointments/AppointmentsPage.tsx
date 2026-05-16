@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../lib/api';
 import { Appointment, Patient, Dentist, Treatment, PageResponse, AppointmentStatus } from '../../types';
-import { Plus, X, Edit2, Trash2, ChevronLeft, ChevronRight, Calendar, Filter } from 'lucide-react';
+import { Plus, X, Edit2, Trash2, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -66,7 +66,7 @@ export default function AppointmentsPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    api.get<Patient[]>('/api/patients').then(r => setPatients(r.data.content || r.data)).catch(() => {});
+    api.get<PageResponse<Patient>>('/api/patients').then(r => setPatients(r.data.content || (r.data as any)))
     api.get<Dentist[]>('/api/dentists').then(r => setDentists(r.data)).catch(() => {});
     api.get<Treatment[]>('/api/treatments').then(r => setTreatments(r.data)).catch(() => {});
   }, []);

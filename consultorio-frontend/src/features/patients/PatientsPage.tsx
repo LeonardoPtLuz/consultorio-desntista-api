@@ -15,7 +15,7 @@ const emptyForm = {
   name: '',
   cpf: '',
   birthDate: '',
-  gender: 'NAO_INFORMADO' as const,
+  gender: 'NAO_INFORMADO' as 'MASCULINO' | 'FEMININO' | 'OUTRO' | 'NAO_INFORMADO',
   phone: '',
   email: '',
   addressStreet: '',

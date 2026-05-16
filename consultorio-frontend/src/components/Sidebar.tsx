@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Users, UserCheck, Calendar,
-  DollarSign, FileText, Tag, LogOut, Stethoscope
+  DollarSign, FileText, Tag, LogOut
 } from 'lucide-react';
 
 const navItems = [
