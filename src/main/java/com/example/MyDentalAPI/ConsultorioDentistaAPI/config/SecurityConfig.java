@@ -75,7 +75,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
-                "https://seu-frontend.onrender.com"  // ← URL real do seu frontend
+                "https://consultorio-frontend-p1e5.onrender.com"  // ← URL real do seu frontend
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
