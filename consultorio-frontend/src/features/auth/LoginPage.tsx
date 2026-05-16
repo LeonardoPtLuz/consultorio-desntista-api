@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('teste@dental.com');
+  const [email, setEmail] = useState('teste@example.com');
   const [password, setPassword] = useState('teste123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-700 rounded-2xl px-5 py-4 text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-600 transition-colors"
-              placeholder="teste@dental.com"
+              placeholder="teste@example.com"
               required
             />
           </div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         <div className="mt-8 text-center text-xs text-zinc-500">
           Teste com:<br />
-          <span className="font-mono text-emerald-400">teste@dental.com</span> /{' '}
+          <span className="font-mono text-emerald-400">teste@example.com</span> /{' '}
           <span className="font-mono text-emerald-400">teste123</span>
         </div>
       </div>
