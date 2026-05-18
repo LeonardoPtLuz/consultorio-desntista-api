@@ -3,6 +3,11 @@
 API RESTful para gestão de consultório odontológico, desenvolvida com **Java 21 + Spring Boot 4**, banco de dados **PostgreSQL** e documentação automática via **Swagger/OpenAPI**.
 
 ---
+# Até a inplementação de auto-ping, para testar:
+
+- Verificar se está hibernando: https://consultorio-desntista-api.onrender.com/
+- Em seguida acessar: https://consultorio-frontend-p1e5.onrender.com
+---
 
 ## 🛠️ Tecnologias
 
@@ -179,8 +184,9 @@ Acessor o frontend
 
 ## 🚧 Roadmap / Próximas melhorias
 
-- [ ] Campo "tratamento" exibir o que foi registrado em **especialidade**
-- [ ] Exibir valor total do serviço na seção de **pagamentos**
-- [ ] Valor atualizado automaticamente conforme pagamentos realizados
+-  Auto-ping preiódico para evitar hibernação da API
+-  Campo "tratamento" exibir o que foi registrado em especialidade
+-  Exibir valor total do serviço na seção de pagamentos
+-  Valor atualizado automaticamente conforme pagamentos realizados
 
 ---
