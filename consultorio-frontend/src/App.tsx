@@ -9,6 +9,7 @@ import AppointmentsPage from './features/appointments/AppointmentsPage';
 import PaymentsPage from './features/payments/PaymentsPage';
 import MedicalRecordsPage from './features/medical-records/MedicalRecordsPage';
 import SpecialtiesPage from './features/specialties/SpecialtiesPage';
+import TreatmentsPage from './features/treatments/TreatmentsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="medical-records" element={<MedicalRecordsPage />} />
         <Route path="specialties" element={<SpecialtiesPage />} />
+        <Route path="treatments" element={<TreatmentsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

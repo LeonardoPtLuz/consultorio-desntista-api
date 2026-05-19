@@ -185,7 +185,6 @@ Acessor o frontend
 ## 🚧 Roadmap / Próximas melhorias
 
 -  Auto-ping preiódico para evitar hibernação da API
--  Campo "tratamento" exibir o que foi registrado em especialidade
 -  Exibir valor total do serviço na seção de pagamentos
 -  Valor atualizado automaticamente conforme pagamentos realizados
 

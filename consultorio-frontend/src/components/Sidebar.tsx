@@ -13,6 +13,7 @@ const navItems = [
   { to: '/medical-records', icon: FileText, label: 'Prontuários' },
   { to: '/payments', icon: DollarSign, label: 'Pagamentos' },
   { to: '/specialties', icon: Tag, label: 'Especialidades' },
+  { to: '/treatments', icon: Tag, label: 'Tratamentos' },
 ];
 
 export default function Sidebar() {
